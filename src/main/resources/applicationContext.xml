@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.0.xsd"
+       default-lazy-init="true">
+
+    <description>Spring公共配置</description>
+
+    <!-- 使用annotation 自动注册bean, 并保证@Required、@Autowired的属性被注入 -->
+    <context:component-scan base-package="com.video.platform">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:exclude-filter type="annotation"
+                                expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
+
+    <!-- JSR303 Validator定义 -->
+    <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+
+    <!-- MyBatis配置 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 自动扫描entity目录, 省掉Configuration.xml里的手工配置 -->
+        <property name="typeAliasesPackage" value="com.video.platform.entity"/>
+        <!-- 显式指定Mapper文件位置 -->
+        <property name="mapperLocations" value="classpath:/mybatis/*Mapper.xml"/>
+    </bean>
+    <!-- 扫描basePackage下所有以@MyBatisRepository标识的 接口-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.video.platform"/>
+        <property name="annotationClass" value="com.video.platform.repository.MyBatisRepository"/>
+    </bean>
+    <!-- 这里的dataSource要与sqlSessionFactory的dataSource一致，否则事务无效 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+        <qualifier value="video"/>
+    </bean>
+    <!-- 使用注解方式的事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <context:property-placeholder ignore-unresolvable="true" location="classpath*:/application.properties"/>
+    <jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/inquiry"/>
+
+
+    <!--1. 启动Quartz，开始调度工作 -->
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <!--1. 获取通道数据 	 注：每5小时运行一次 -->
+                <ref bean="getSpBillTimer"/>
+            </list>
+        </property>
+    </bean>
+
+    <!--1. 获取通道数据 	 注：每5小时运行一次 -->
+    <bean id="getSpBillJobDetail"
+          class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="billService"/>
+        <property name="targetMethod" value="process"/>
+        <property name="concurrent" value="false"/>
+    </bean>
+
+    <bean id="getSpBillTimer" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="getSpBillJobDetail"/>
+        </property>
+        <property name="cronExpression">
+            <value>0 0/5 * * * ? *</value>
+        </property>
+    </bean>
+</beans>

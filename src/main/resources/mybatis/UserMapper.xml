@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.video.platform.repository.UserDao">
+
+    <sql id="columns">
+        id, name, password,
+        salt,roles,reduce,
+        cp_id as cpId,
+        parent_id as parentId,
+        login_name as loginName,
+        plain_password as plainPassword,
+        register_date as registerDate
+    </sql>
+
+    <!--
+        获取用户: 输出直接映射到对象, login_name列要"as loginName"以方便映射 ,team_id as "team.id"创建team对象并赋值
+    -->
+    <select id="get" parameterType="long" resultType="User">
+        select
+            <include refid="columns"/>
+        from
+            ss_user
+        where
+            id=#{id}
+    </select>
+
+    <select id="findByLoginName" parameterType="string" resultType="User">
+        select
+            <include refid="columns"/>
+        from
+            ss_user
+        where
+            login_name=#{loginName}
+    </select>
+
+    <!-- 查询用户,演示: 1.输入用map传入多个参数 2.<where>语句, 智能添加where和and关键字 3.输出直接映射对象 -->
+    <select id="search" parameterType="map" resultType="User">
+        select
+            <include refid="columns"/>
+        from
+            ss_user
+        <where>
+            <if test="loginName != null">
+                login_name=#{loginName}
+            </if>
+            <if test="name != null">
+                and name=#{name}
+            </if>
+            <if test="parentId != null">
+                and parent_id=#{parentId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入用户： 1.由数据库生成id并赋值到user对象 2.输入用对象, 嵌套属性表达式#{team.id} -->
+    <insert id="save" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        insert into ss_user (
+            login_name, plain_password, cp_id, name, password, salt, roles, reduce, parent_id, register_date
+        ) values (
+            #{loginName}, #{plainPassword}, #{cpId}, #{name}, #{password}, #{salt}, 'user', #{reduce}, #{parentId}, now()
+        )
+    </insert>
+
+    <!-- 更新用户 -->
+    <update id="update" parameterType="User">
+        update ss_user set
+            name=#{name},cp_id=#{cpId}, plain_password=#{plainPassword}, parent_id=#{parentId}, password=#{password}, salt=#{salt}, reduce=#{reduce}
+        where id=#{id}
+    </update>
+
+    <!-- 删除用户 -->
+    <delete id="delete" parameterType="long">
+        delete from ss_user where id=#{id}
+    </delete>
+</mapper> 

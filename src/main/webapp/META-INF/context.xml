@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+    <Resource name="jdbc/inquiry"
+              auth="Container"
+              type="javax.sql.DataSource"
+              factory="org.apache.commons.dbcp.BasicDataSourceFactory"
+              driverClassName="com.mysql.jdbc.ReplicationDriver"
+              connectionCachingEnabled="true"
+              connectionCacheProperties="{MaxStatementsLimit=10}"
+              removeAbandoned="true"
+              removeAbandonedTimeout="600"
+              logAbandoned="true"
+              timeBetweenEvictionRunsMillis="60000"
+              minEvictableIdleTimeMillis="60000"
+              testOnBorrow="false"
+              testOnReturn="false"
+              validationQuery="select null"
+              testWhileIdle="true"
+              defaultAutoCommit="false"/>
+</Context>

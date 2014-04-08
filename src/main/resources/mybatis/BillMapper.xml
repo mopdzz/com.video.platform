@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.video.platform.repository.BillDao">
+
+    <sql id="columns">
+        id,
+        users,
+        cp_id as cpId,
+        parent_id as parentId,
+        cp_name as cpName,
+        cp_users as cpUsers,
+        left(time,10) as date
+    </sql>
+
+    <!-- 插入话单 -->
+    <insert id="save" parameterType="Bill" useGeneratedKeys="true" keyProperty="id">
+        insert into ss_bill (
+            cp_id, parent_id, cp_name, users, cp_users, time
+        ) values (
+            #{cpId}, #{parentId}, #{cpName}, #{users}, #{cpUsers}, #{Date}
+        )
+    </insert>
+
+    <update id="update" parameterType="Bill">
+        update ss_bill set users=#{users}, cp_users=#{cpUsers}
+        where cp_id=#{cpId} and time=#{Date}
+    </update>
+
+    <!-- 查询话单 -->
+    <select id="find" parameterType="BillCondition" resultType="Bill">
+        select
+            <include refid="columns"/>
+        from
+            ss_bill
+        <where>
+            <if test="btime != null">
+                <![CDATA[ time >= #{btime}]]>
+            </if>
+            <if test="etime != null">
+                <![CDATA[ and time <= #{etime}]]>
+            </if>
+            <if test="cpId > 0">
+                and cp_id=#{cpId}
+            </if>
+            <if test="parentId > 0">
+                and parent_id=#{parentId}
+            </if>
+        </where>
+        order by left(time,10)
+    </select>
+</mapper>
